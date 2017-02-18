@@ -11,9 +11,12 @@ boxes = cross(rows, cols)
 row_units = [cross(r, cols) for r in rows]
 col_units = [cross(rows, c) for c in cols]
 square_units = [cross(f, s) for f in ("ABC","DEF","GHI") for s in ("123", "456", "789")]
+diagonal_units = [["A1", "B2", "C3", "D4", "E5", "F6", "G7", "H8", "I9"], ["I1", "H2", "G3", "F4", "E5", "D6", "C7", "B8", "A9"]]
 
-unitlist = row_units + col_units + square_units
+unitlist = row_units + col_units + square_units + diagonal_units
+
 units = dict((s, [u for u in unitlist if s in u]) for s in boxes)
+
 peers = dict((s, set(sum(units[s],[]))-set([s])) for s in boxes)
 
 def assign_value(values, box, value):
@@ -34,9 +37,18 @@ def naked_twins(values):
     Returns:
         the values dictionary with the naked twins eliminated from peers.
     """
-
+    
     # Find all instances of naked twins
-    # Eliminate the naked twins as possibilities for their peers
+    possibleTwins = [box for box in values.keys() if len(values[box]) == 2]
+
+    for pt in possibleTwins:
+        for u in units[pt]:
+            twinsInUnit = [t for t in u if values[t] == values[pt]]
+            if len(twinsInUnit) == 2:
+                for v in values[pt]:
+                    for ui in [ui for ui in u if values[ui] != values[pt]]:
+                        assign_value(values, ui, values[ui].replace(v, ""))
+    return values
 
 def grid_values(grid):
     return dict(zip(boxes, [s.replace('.', '123456789') for s in grid]))
@@ -53,7 +65,8 @@ def display(values):
 def eliminate(values):
     for k in [k for k in values.keys() if len(values[k]) == 1]:
         for p in peers[k]:
-            values[p] = values[p].replace(values[k], "")
+            #values[p] = values[p].replace(values[k], "")
+            assign_value(values, p, values[p].replace(values[k], ""))
     return values
 
 def only_choice(values):
@@ -66,7 +79,8 @@ def only_choice(values):
                         unitHasIt = True
                         break
                 if unitHasIt == False:
-                    values[k] = pv
+                    #values[k] = pv
+                    assign_value(values, k, pv)
                     break
     return values
 
