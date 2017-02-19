@@ -35,18 +35,14 @@ def assign_value(values, box, value):
     return values
 
 def naked_twins(values):
-    """Eliminate values using the naked twins strategy.
-    Args:
-        values(dict): a dictionary of the form {'box_name': '123456789', ...}
-
-    Returns:
-        the values dictionary with the naked twins eliminated from peers.
+    """
+    Find all the boxes that have two possible solutions,
+    then any identical boxes in the same unit. Once found, each of
+    the possible solution can be eliminated from the other boxes in the unit 
     """
     
     # Find all instances of naked twins
-    possibleTwins = [box for box in values.keys() if len(values[box]) == 2]
-
-    for pt in possibleTwins:
+    for pt in [box for box in values.keys() if len(values[box]) == 2]:
         for u in units[pt]:
             twinsInUnit = [t for t in u if values[t] == values[pt]]
             if len(twinsInUnit) == 2:
