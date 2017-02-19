@@ -3,11 +3,11 @@
 
 # Question 1 (Naked Twins)
 Q: How do we use constraint propagation to solve the naked twins problem?  
-A: *Student should provide answer here*
+A: We first identify potential candidates for "naked twin" elimination by looking for squares that have two possible solutions. Then we search for the identical possible solution in the same unit as that square. If we find it, those digits are guaranteed to be placed in those squares, thus we can eliminate individual digits from all the other squares in the unit. This has potential to reduce the solution space further as we go through our contraints and eliminations.
 
 # Question 2 (Diagonal Sudoku)
 Q: How do we use constraint propagation to solve the diagonal sudoku problem?  
-A: *Student should provide answer here*
+A: We keep all the reduce steps in place and the only thing we do is add two additional units: diagonals A1-I9 and I1-A9. Then when we do elimination, only-choice, and naked-twins constraint checks, those additional units come into place and are used to narrow down solution space.
 
 ### Install
 

@@ -3,6 +3,9 @@ assignments = []
 def cross(A, B):
     return [s+t for s in A for t in B]
 
+# create some helper structures to help easily find
+# peers and units
+
 rows = "ABCDEFGHI"
 cols = "123456789"
 
@@ -11,12 +14,14 @@ boxes = cross(rows, cols)
 row_units = [cross(r, cols) for r in rows]
 col_units = [cross(rows, c) for c in cols]
 square_units = [cross(f, s) for f in ("ABC","DEF","GHI") for s in ("123", "456", "789")]
-diagonal_units = [["A1", "B2", "C3", "D4", "E5", "F6", "G7", "H8", "I9"], ["I1", "H2", "G3", "F4", "E5", "D6", "C7", "B8", "A9"]]
 
+# unit needed to make sure we can enforce diagonal constraints
+diagonal_units = [[a[0]+a[1] for a in zip(rows,cols)], [a[0]+a[1] for a in zip(rows[::-1],cols)]]
+
+# make sure to add to diagonal units
 unitlist = row_units + col_units + square_units + diagonal_units
 
 units = dict((s, [u for u in unitlist if s in u]) for s in boxes)
-
 peers = dict((s, set(sum(units[s],[]))-set([s])) for s in boxes)
 
 def assign_value(values, box, value):
@@ -51,9 +56,17 @@ def naked_twins(values):
     return values
 
 def grid_values(grid):
+    """
+    Turn a string encoded sudoku puzzle into a dictionary
+    where key is the address of the box and value is either a solved value
+    or all the digits 1 through 9 
+    """
     return dict(zip(boxes, [s.replace('.', '123456789') for s in grid]))
 
 def display(values):
+    """
+    Output sudoku puzzle in console so that it can be visualized
+    """
     width = 1+max(len(values[s]) for s in boxes)
     line = '+'.join(['-'*(width*3)]*3)
     for r in rows:
@@ -63,13 +76,22 @@ def display(values):
     return
 
 def eliminate(values):
+    """
+    Find boxes that are solved and then for each of those get its peer
+    and eliminate the value of that box for the peer as that value
+    can't be used more than once for peers
+    """
     for k in [k for k in values.keys() if len(values[k]) == 1]:
         for p in peers[k]:
-            #values[p] = values[p].replace(values[k], "")
             assign_value(values, p, values[p].replace(values[k], ""))
     return values
 
 def only_choice(values):
+    """
+    Check each unsolved box and see if any of the potential solutions
+    can be determined base on the criteria if none of its pairs have that value
+    as either a solution or a possible solution
+    """
     for k in [k for k in values.keys() if len(values[k]) != 1]:
         for pv in values[k]:
             for u in units[k]:
@@ -79,19 +101,27 @@ def only_choice(values):
                         unitHasIt = True
                         break
                 if unitHasIt == False:
-                    #values[k] = pv
                     assign_value(values, k, pv)
                     break
     return values
 
 def reduce_puzzle(values):
+    """
+        Apply constraint propagation to try and solve the puzzle, or at least
+        reduce the solution space.
+
+        Use elimination, only choice, and naked twins constraints to solve the board
+
+        Make sure to check for stalled progress (no more eliminations, choices, twins can be applied)
+    """
     stalled = False
     while not stalled:
         solved_before = len([box for box in values.keys() if len(values[box]) == 1])
         
         values = eliminate(values)
         values = only_choice(values)
-    
+        values = naked_twins(values)
+
         solved_after = len([box for box in values.keys() if len(values[box]) == 1])
 
         stalled = solved_before == solved_after
@@ -101,6 +131,13 @@ def reduce_puzzle(values):
     return values
 
 def search(values):
+    """
+    Search for the solution for a given puzzle. General approach:
+        - reduce the puzzle
+        - see if it was solved by the reduction, return if so
+        - find the smallest unsolved box, and search for solution again with a
+            puzzle updated with the chosen value
+    """
     values = reduce_puzzle(values)
     if values is False:
         return False
